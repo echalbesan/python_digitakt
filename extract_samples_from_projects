@@ -1,0 +1,44 @@
+import zipfile
+import os
+import shutil
+
+def extract_samples_from_project_folder(project_folder, output_folder='extracted_samples'):
+    # Create the destination folder if it does not exist
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    # Loop through all files in the project folder
+    for file in os.listdir(project_folder):
+        if file.endswith('.dtprj'):
+            zip_path = os.path.join(project_folder, file)
+            
+            try:
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    # Check if the "Samples" folder exists in the zip file
+                    if any(item.filename.startswith('Samples/') for item in zip_ref.infolist()):
+                        for item in zip_ref.infolist():
+                            if item.filename.startswith('Samples/'):
+                                # Full destination path
+                                destination_path = os.path.join(output_folder, item.filename)
+                                # If the item is a directory, create it if it doesn't exist
+                                if item.is_dir():
+                                    if not os.path.exists(destination_path):
+                                        os.makedirs(destination_path)
+                                else:
+                                    # If the item is a file, extract it only if it does not exist at the destination
+                                    if not os.path.exists(destination_path):
+                                        # Create parent directory if it doesn't exist
+                                        parent_directory = os.path.dirname(destination_path)
+                                        if not os.path.exists(parent_directory):
+                                            os.makedirs(parent_directory)
+                                        with zip_ref.open(item) as source, open(destination_path, 'wb') as target:
+                                            shutil.copyfileobj(source, target)
+                                    else:
+                                        print(f"The file {destination_path} already exists, it will not be overwritten.")
+                        print(f"Samples extracted from: {file}")
+            except zipfile.BadZipFile:
+                print(f"Error: The file {file} is not a valid zip or is corrupted.")
+
+# Adjust these paths according to where your files actually are
+project_folder = '/Users/alvaro/Desktop/Digi/Projects'
+extract_samples_from_project_folder(project_folder)
